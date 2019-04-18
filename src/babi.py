@@ -46,7 +46,6 @@ def load_data(path, tasks=None):
         A list of answers corresponding to each story and question. Each answer
         is a single word.
     """
-
     if tasks is None:
         files = [os.path.join(path, file) for file in os.listdir(path)]
     else:
@@ -84,6 +83,30 @@ def load_data(path, tasks=None):
 
 
 def data_to_index(data, dictionary):
+    """
+    Converts all tokens in data to embedding indices according to a dictionary.
+
+    Parameters
+    ----------
+    data : tuple(list(list(list(int))), list(list(int)), list(int))
+        Data tuple of stories, questions, and answers. Each story is a
+        list of statements and each statement is a list of tokens. Similarly,
+        each question is a list of tokens. Each answer is a single token.
+    dictionary : dict(str: int)
+        Dictionary to convert tokens to indices.
+
+    Returns
+    -------
+    stories : list(list(list(int)))
+        A list of stories. Each story is a list of statements and each
+        statement is a list of embedding indices representing tokens.
+    questions : list(list(int))
+        A list of questions corresponding to each story. Each question is a
+        list of embedding indices representing tokens.
+    answers : list(int)
+        A list of answers corresponding to each story and question. Each answer
+        is a single embedding indiex representing a token.
+    """
     stories, questions, answers = data
     stories = [[[
         dictionary.get(word, 0) for word in statement]
