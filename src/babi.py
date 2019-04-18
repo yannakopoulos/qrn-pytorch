@@ -18,7 +18,8 @@ def tokenize(line):
     tokens : list(str)
         List of tokens in line.
     """
-    tokens = [x.strip().lower() for x in re.split("(\W+)+", line) if x.strip()]
+    tokens = [
+        x.strip().lower() for x in re.split(r"(\W+)+", line) if x.strip()]
     return tokens
 
 
