@@ -104,9 +104,9 @@ def data_to_index(data, dictionary):
     questions : list(tensor(int))
         A list of questions corresponding to each story. Each question is a
         tensor of embedding indices representing tokens.
-    answers : list(int)
+    answers : tensor(int)
         A list of answers corresponding to each story and question. Each answer
-        is a single embedding indiex representing a token.
+        is a tensor with a single embedding indiex representing a token.
     """
     stories, questions, answers = data
     stories = [[
@@ -116,7 +116,7 @@ def data_to_index(data, dictionary):
     questions = [
         LongTensor([dictionary.get(word, 0) for word in question])
         for question in questions]
-    answers = [dictionary.get(answer, 0) for answer in answers]
+    answers = [LongTensor([dictionary.get(answer, 0)]) for answer in answers]
     return stories, questions, answers
 
 
@@ -135,14 +135,14 @@ def load_corpus(path, tasks=None):
 
     Returns
     -------
-    train_data : tuple(list(list(tensor(int))), list(tensor(int)), list(int))
+    train_data : tuple(list(list(tensor(int))), list(tensor(int)), tensor(int))
         Training data tuple of stories, questions, and answers. Each story is a
         list of statements and each statement is a tensor of ints representing
         the embedding index of a token. Similarly, each question is a tensor of
         ints representing the embedding index of a token. Each answer is a
         single int representing the embedding index of a one-word answer. The 0
         index is reserved for a padding embedding.
-    test_data : tuple(list(list(tensor(int))), list(tensor(int)), list(int))
+    test_data : tuple(list(list(tensor(int))), list(tensor(int)), tensor(int))
         Same as above, but for testing data.
     n_words : int
         Number of unique tokens in the training corpus.
