@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+from model import LongTensor, FloatTensor
 
 
 def tokenize(line):
@@ -97,23 +98,23 @@ def data_to_index(data, dictionary):
 
     Returns
     -------
-    stories : list(list(list(int)))
+    stories : list(list(tensor(int)))
         A list of stories. Each story is a list of statements and each
-        statement is a list of embedding indices representing tokens.
-    questions : list(list(int))
+        statement is a tensor of embedding indices representing tokens.
+    questions : list(tensor(int))
         A list of questions corresponding to each story. Each question is a
-        list of embedding indices representing tokens.
+        tensor of embedding indices representing tokens.
     answers : list(int)
         A list of answers corresponding to each story and question. Each answer
         is a single embedding indiex representing a token.
     """
     stories, questions, answers = data
-    stories = [[[
-        dictionary.get(word, 0) for word in statement]
+    stories = [[
+        LongTensor([dictionary.get(word, 0) for word in statement])
         for statement in story]
         for story in stories]
     questions = [
-        [dictionary.get(word, 0) for word in question]
+        LongTensor([dictionary.get(word, 0) for word in question])
         for question in questions]
     answers = [dictionary.get(answer, 0) for answer in answers]
     return stories, questions, answers
@@ -134,14 +135,14 @@ def load_corpus(path, tasks=None):
 
     Returns
     -------
-    train_data : tuple(list(list(list(int))), list(list(int)), list(int))
+    train_data : tuple(list(list(tensor(int))), list(tensor(int)), list(int))
         Training data tuple of stories, questions, and answers. Each story is a
-        list of statements and each statement is a list of ints representing
-        the embedding index of a token. Similarly, each question is a list of
+        list of statements and each statement is a tensor of ints representing
+        the embedding index of a token. Similarly, each question is a tensor of
         ints representing the embedding index of a token. Each answer is a
         single int representing the embedding index of a one-word answer. The 0
         index is reserved for a padding embedding.
-    test_data : tuple(list(list(list(int))), list(list(int)), list(int))
+    test_data : tuple(list(list(tensor(int))), list(tensor(int)), list(int))
         Same as above, but for testing data.
     n_words : int
         Number of unique tokens in the training corpus.
