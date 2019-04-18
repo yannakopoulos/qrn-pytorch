@@ -154,6 +154,7 @@ def load_corpus(path, tasks=None):
         for statement in story
         for word in statement])
     vocab.update([word for question in train_data[1] for word in question])
+    vocab.update(train_data[2])
     dictionary = {word: i + 1 for i, word in enumerate(vocab)}
     n_words = len(vocab)
 
