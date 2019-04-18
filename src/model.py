@@ -63,6 +63,8 @@ class QRN(nn.Module):
 
         for layer in range(n_layers):
             self.layers.append(QRNCell(input_size, hidden_size))
+            if torch.cuda.is_available():
+                self.layers[-1].cuda()
 
         self.reset_parameters()
 
@@ -78,7 +80,7 @@ class QRN(nn.Module):
         for layer in range(self.n_layers):
             q_states.append([])
             # initialize h_0 to zero vector
-            h_states.append([torch.zeros(self.hidden_size)])
+            h_states.append([FloatTensor(self.hidden_size).fill_(0)])
 
         for statement in story:
             # first layer uses question directly
