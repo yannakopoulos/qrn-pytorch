@@ -77,6 +77,7 @@ if __name__ == "__main__":
     train_acc = []
     test_loss = []
     test_acc = []
+    completed = 0
 
     for epoch in range(args.n_epochs):
         if args.verbose:
@@ -141,6 +142,8 @@ if __name__ == "__main__":
                 "Testing: Loss = {0:.4f}, Accuracy = {1:.4f}"
                 .format(test_loss[-1], test_acc[-1]))
 
+        completed = epoch
+
         if test_acc[-1] == 1:
             break  # no need to continue as we're not testing on any more data
 
@@ -149,14 +152,15 @@ if __name__ == "__main__":
 
     filename = "QRN-" + "-".join([
         "{}={}".format(arg, getattr(args, arg)) for arg in vars(args)
-        if arg != "verbose"])
+        if arg != "data" and arg != "verbose"])
     results_file = filename + ".tsv"
     model_file = filename + ".model"
 
     print("\nSaving results to {}...".format(results_file))
     with open(results_file, "w") as f:
+        epochs = completed if completed < args.n_epochs else args.n_epochs
         f.write("epoch\ttrain_loss\ttrain_acc\ttest_loss\ttest_acc\n")
-        for epoch in range(args.n_epochs):
+        for epoch in range(epochs):
             f.write("{}\t{}\t{}\t{}\t{}\n".format(
                 epoch, train_loss[epoch], train_acc[epoch], test_loss[epoch],
                 test_acc[epoch]))
