@@ -66,7 +66,7 @@ def load_data(path, tasks=None):
                 ID = int(ID)
                 if ID == 1:
                     # start of a new story
-                    story = []
+                    story = [tokenize(line)]
                 elif "\t" in line:
                     # question and answer line
                     question, answer, _ = line.split("\t")
@@ -75,7 +75,7 @@ def load_data(path, tasks=None):
                         ["{}:".format(i + 1)] + line
                         for i, line in enumerate(story)]
                     stories.append(substory)
-                    questions.append(question)
+                    questions.append(["{}:".format(len(story) + 1)] + question)
                     answers.append(answer)
                 else:
                     # regular line
