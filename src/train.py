@@ -13,7 +13,7 @@ from model import LongTensor, FloatTensor, Model
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-d", "--data", required=True, help="bAbI data directory")
+        "-i", "--input", required=True, help="bAbI data directory")
     parser.add_argument(
         "-t", "--tasks", type=int, nargs="+", help="bAbI tasks to load")
     parser.add_argument(
@@ -31,6 +31,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e", "--n_epochs", type=int, default=100,
         help="number of epochs to use for training")
+    parser.add_argument(
+        "-o", "--output", help="directory to save results")
     # parser.add_argument(
     #     "-b", "--batch_size", type=int, default=32,
     #     help="batch size to use for training")
@@ -39,8 +41,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # check argument sanity
-    if not os.path.isdir(args.data):
-        parser.error("{} is not a directory".format(args.data))
+    if not os.path.isdir(args.input):
+        parser.error("{} is not a directory".format(args.input))
 
     # # determine if GPU is available
     if torch.cuda.is_available() and args.verbose:
@@ -49,7 +51,7 @@ if __name__ == "__main__":
     if args.verbose:
         print("Reading bAbI corpus...")
 
-    train_data, test_data, n_words = load_corpus(args.data, tasks=args.tasks)
+    train_data, test_data, n_words = load_corpus(args.input, tasks=args.tasks)
     # train_stories, train_questions, train_answers = train_data
     # test_stories, test_questions, test_answers = train_data
 
@@ -153,8 +155,11 @@ if __name__ == "__main__":
     filename = "QRN-" + "-".join([
         "{}={}".format(arg, getattr(args, arg)) for arg in vars(args)
         if arg != "data" and arg != "verbose"])
-    results_file = filename + ".tsv"
-    model_file = filename + ".model"
+    results_file = os.path.join(args.output, filename + ".tsv")
+    model_file = os.path.join(args.output, filename + ".model")
+
+    if not os.path.isdir(args.output):
+        os.mkdir(args.output)
 
     print("\nSaving results to {}...".format(results_file))
     with open(results_file, "w") as f:
