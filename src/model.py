@@ -13,9 +13,9 @@ else:
 
 
 class PositionalEncoder(nn.Module):
-    def __init__(self, n_dimensions):
+    def __init__(self, hidden_size):
         super(PositionalEncoder, self).__init__()
-        self.d = n_dimensions
+        self.d = hidden_size
 
     def forward(self, embeddings):
         J = embeddings.shape[0]
@@ -50,8 +50,7 @@ class QRNCell(nn.Module):
         z = self.alpha(x * q)
         h_tilde = self.rho(torch.cat((x, q), 0))
         h = z * h_tilde + (1 - z) * h_prev
-        # q = q  # FIXME: this is only true for QRNs with 1 layer
-        return q, h
+        return h
 
 
 class QRN(nn.Module):
@@ -62,9 +61,6 @@ class QRN(nn.Module):
         self.hidden_size = hidden_size
         self.n_layers = n_layers
         self.layers = []
-
-        if n_layers > 1:
-            raise ValueError("QRNs with <1 layers are not yet supported")
 
         for layer in range(n_layers):
             self.layers.append(QRNCell(input_size, hidden_size))
@@ -91,12 +87,11 @@ class QRN(nn.Module):
             # first layer uses question directly
             q_states[0].append(question)
             for layer, module in enumerate(self.layers):
-                q, h = module(
-                    statement, q_states[layer][-1], h_states[layer][-1])
+                h = module(statement, q_states[layer][-1], h_states[layer][-1])
                 if layer < self.n_layers - 1:
-                    # next layer uses output question
+                    # same iteration of next layer uses q = h from this layer
                     # unless this layer is the last one
-                    q_states[layer + 1].append(q)
+                    q_states[layer + 1].append(h)
                 # next iteration of same layer uses output hidden layer
                 h_states[layer].append(h)
 
@@ -104,11 +99,11 @@ class QRN(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, n_words, n_dimensions, hidden_size, n_layers):
+    def __init__(self, n_words, hidden_size, n_layers):
         super(Model, self).__init__()
-        self.embed = nn.Embedding(n_words + 1, n_dimensions, padding_idx=0)
-        self.encoder = PositionalEncoder(n_dimensions)
-        self.QRN = QRN(n_dimensions, hidden_size, n_layers)
+        self.embed = nn.Embedding(n_words + 1, hidden_size, padding_idx=0)
+        self.encoder = PositionalEncoder(hidden_size)
+        self.QRN = QRN(hidden_size, hidden_size, n_layers)
         self.predict = nn.Linear(hidden_size, n_words + 1)
         self.reset_parameters()
 

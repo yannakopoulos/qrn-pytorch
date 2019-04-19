@@ -17,13 +17,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t", "--tasks", type=int, nargs="+", help="bAbI tasks to load")
     parser.add_argument(
-        "-n", "--n_dimensions", type=int, default=100,
-        help="embedding dimensions")
-    parser.add_argument(
         "-s", "--hidden_size", type=int, default=32,
         help="size of hidden layer")
     parser.add_argument(
-        "-l", "--n_layers", type=int, default=2,
+        "-l", "--n_layers", type=int, default=1,
         help="number of QRN layers")
     parser.add_argument(
         "-o", "--optimizer", choices=("Adam", "SGD", "Adagrad"),
@@ -59,7 +56,7 @@ if __name__ == "__main__":
     if args.verbose:
         print("Initializing model...")
 
-    model = Model(n_words, args.n_dimensions, args.hidden_size, args.n_layers)
+    model = Model(n_words, args.hidden_size, args.n_layers)
 
     if torch.cuda.is_available():
         model.cuda()
