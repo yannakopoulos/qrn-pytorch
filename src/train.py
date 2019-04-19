@@ -141,6 +141,9 @@ if __name__ == "__main__":
                 "Testing: Loss = {0:.4f}, Accuracy = {1:.4f}"
                 .format(test_loss[-1], test_acc[-1]))
 
+        if test_acc[-1] == 1:
+            break  # no need to continue as we're not testing on any more data
+
     if args.verbose:
         print("\nTraining finished!")
 
