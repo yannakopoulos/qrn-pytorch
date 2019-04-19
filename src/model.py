@@ -13,11 +13,16 @@ else:
 
 
 class PositionalEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, n_dimensions):
         super(PositionalEncoder, self).__init__()
+        self.d = n_dimensions
 
     def forward(self, embeddings):
-        encoding = torch.mean(embeddings, dim=0)
+        J = embeddings.shape[0]
+        L = FloatTensor([[
+            (1 - j/J) - (k/self.d) * (1 - 2*j/J) for k in range(1, self.d + 1)]
+            for j in range(1, J + 1)])
+        encoding = torch.sum(L * embeddings, dim=0)
         return encoding
 
 
@@ -105,7 +110,7 @@ class Model(nn.Module):
         # add 1 extra embedding for padding
         self.embed = nn.Embedding(n_words + 1, n_dimensions)
         # TODO: do positional encoding instead of BOW embedding average
-        self.encoder = PositionalEncoder()
+        self.encoder = PositionalEncoder(n_dimensions)
         self.QRN = QRN(n_dimensions, hidden_size, n_layers)
         # convert final prediction back into embedding index
         self.predict = nn.Linear(hidden_size, n_words + 1)
