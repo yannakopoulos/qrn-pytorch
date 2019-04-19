@@ -50,7 +50,7 @@ class QRNCell(nn.Module):
         z = self.alpha(x * q)
         h_tilde = self.rho(torch.cat((x, q), 0))
         h = z * h_tilde + (1 - z) * h_prev
-        q = q.clone()  # FIXME: this is only true for QRNs with 1 layer
+        # q = q  # FIXME: this is only true for QRNs with 1 layer
         return q, h
 
 
@@ -106,15 +106,10 @@ class QRN(nn.Module):
 class Model(nn.Module):
     def __init__(self, n_words, n_dimensions, hidden_size, n_layers):
         super(Model, self).__init__()
-
-        # add 1 extra embedding for padding
-        self.embed = nn.Embedding(n_words + 1, n_dimensions)
-        # TODO: do positional encoding instead of BOW embedding average
+        self.embed = nn.Embedding(n_words + 1, n_dimensions, padding_idx=0)
         self.encoder = PositionalEncoder(n_dimensions)
         self.QRN = QRN(n_dimensions, hidden_size, n_layers)
-        # convert final prediction back into embedding index
         self.predict = nn.Linear(hidden_size, n_words + 1)
-
         self.reset_parameters()
 
     def reset_parameters(self):
