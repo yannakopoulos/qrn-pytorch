@@ -7,13 +7,13 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as utils_data
 from babi import load_corpus
-from model import LongTensor, FloatTensor, Model
+from model import Model
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input", required=True, help="bAbI data directory")
+        "-d", "--data", required=True, help="bAbI data directory")
     parser.add_argument(
         "-t", "--tasks", type=int, nargs="+", help="bAbI tasks to load")
     parser.add_argument(
@@ -23,16 +23,19 @@ if __name__ == "__main__":
         "-l", "--n_layers", type=int, default=1,
         help="number of QRN layers")
     parser.add_argument(
+        "-b", "--bidirectional", action="store_true",
+        help="make QRN bidirectional")
+    parser.add_argument(
         "-o", "--optimizer", choices=("Adam", "SGD", "Adagrad"),
         default="Adam", help="optimizer to use for training")
     parser.add_argument(
-        "-r", "--learning_rate", type=float, default=0.01,
+        "-lr", "--learning_rate", type=float, default=0.01,
         help="learning rate to use for training")
     parser.add_argument(
         "-e", "--n_epochs", type=int, default=100,
         help="number of epochs to use for training")
     parser.add_argument(
-        "-o", "--output", help="directory to save results")
+        "-r", "--results", help="directory to save results")
     # parser.add_argument(
     #     "-b", "--batch_size", type=int, default=32,
     #     help="batch size to use for training")
@@ -41,8 +44,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # check argument sanity
-    if not os.path.isdir(args.input):
-        parser.error("{} is not a directory".format(args.input))
+    if not os.path.isdir(args.data):
+        parser.error("{} is not a directory".format(args.data))
 
     # # determine if GPU is available
     if torch.cuda.is_available() and args.verbose:
@@ -51,14 +54,14 @@ if __name__ == "__main__":
     if args.verbose:
         print("Reading bAbI corpus...")
 
-    train_data, test_data, n_words = load_corpus(args.input, tasks=args.tasks)
+    train_data, test_data, n_words = load_corpus(args.data, tasks=args.tasks)
     # train_stories, train_questions, train_answers = train_data
     # test_stories, test_questions, test_answers = train_data
 
     if args.verbose:
         print("Initializing model...")
 
-    model = Model(n_words, args.hidden_size, args.n_layers)
+    model = Model(n_words, args.hidden_size, args.n_layers, args.bidirectional)
 
     if torch.cuda.is_available():
         model.cuda()
@@ -155,11 +158,11 @@ if __name__ == "__main__":
     filename = "QRN-" + "-".join([
         "{}={}".format(arg, getattr(args, arg)) for arg in vars(args)
         if arg != "data" and arg != "verbose"])
-    results_file = os.path.join(args.output, filename + ".tsv")
-    model_file = os.path.join(args.output, filename + ".model")
+    results_file = os.path.join(args.results, filename + ".tsv")
+    model_file = os.path.join(args.results, filename + ".model")
 
-    if not os.path.isdir(args.output):
-        os.mkdir(args.output)
+    if not os.path.isdir(args.results):
+        os.mkdir(args.results)
 
     print("\nSaving results to {}...".format(results_file))
     with open(results_file, "w") as f:

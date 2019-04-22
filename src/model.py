@@ -29,8 +29,6 @@ class PositionalEncoder(nn.Module):
 class QRNCell(nn.Module):
     def __init__(self, input_size, hidden_size):
         super(QRNCell, self).__init__()
-        # TODO: implement bidirectionality
-
         self.input_size = input_size
         self.hidden_size = hidden_size
 
@@ -54,18 +52,24 @@ class QRNCell(nn.Module):
 
 
 class QRN(nn.Module):
-    def __init__(self, input_size, hidden_size, n_layers):
+    def __init__(self, input_size, hidden_size, n_layers, bidirectional=False):
         super(QRN, self).__init__()
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.n_layers = n_layers
-        self.layers = []
+        self.bidirectional = bidirectional
+        self.forward_layers = []
+        self.backward_layers = []
 
         for layer in range(n_layers):
-            self.layers.append(QRNCell(input_size, hidden_size))
+            self.forward_layers.append(QRNCell(input_size, hidden_size))
             if torch.cuda.is_available():
-                self.layers[-1].cuda()
+                self.forward_layers[-1].cuda()
+            if bidirectional:
+                self.backward_layers.append(QRNCell(input_size, hidden_size))
+                if torch.cuda.is_available():
+                    self.backward_layers[-1].cuda()
 
         self.reset_parameters()
 
@@ -76,30 +80,38 @@ class QRN(nn.Module):
 
     def forward(self, story, question):
         q_states = []
-        h_states = []
+        h_states_forward = []
+        h_states_backward = []
 
         for layer in range(self.n_layers):
             q_states.append([])
             # initialize h_0 to zero vector
-            h_states.append([FloatTensor(self.hidden_size).fill_(0)])
+            h_states_forward.append(
+                [FloatTensor(self.hidden_size).fill_(0)])
+            h_states_backward.insert(
+                0, [FloatTensor(self.hidden_size).fill_(0)])
 
+        # TODO: implement bidirectionality
         for statement in story:
             # first layer uses question directly
             q_states[0].append(question)
-            for layer, module in enumerate(self.layers):
-                h = module(statement, q_states[layer][-1], h_states[layer][-1])
+            for layer, module in enumerate(self.forward_layers):
+                h_forward = module(
+                    statement, q_states[layer][-1],
+                    h_states_forward[layer][-1])
                 if layer < self.n_layers - 1:
                     # same iteration of next layer uses q = h from this layer
                     # unless this layer is the last one
-                    q_states[layer + 1].append(h)
+                    q_states[layer + 1].append(h_forward)
                 # next iteration of same layer uses output hidden layer
-                h_states[layer].append(h)
+                h_states_forward[layer].append(h_forward)
 
-        return h_states[-1][-1]
+        return h_states_forward[-1][-1]
 
 
 class Model(nn.Module):
-    def __init__(self, n_words, hidden_size, n_layers):
+    # TODO: test/make work on batch data
+    def __init__(self, n_words, hidden_size, n_layers, bidirectional=False):
         super(Model, self).__init__()
         self.embed = nn.Embedding(n_words + 1, hidden_size, padding_idx=0)
         self.encoder = PositionalEncoder(hidden_size)
