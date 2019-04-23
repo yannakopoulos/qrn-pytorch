@@ -13,6 +13,24 @@ else:
 
 
 class PositionalEncoder(nn.Module):
+    r"""
+    A position encoder that derives a single-vector representation for a
+    sentence consisting of a list of embedding vectors x, taking into account
+    each word's position in the sentence. Calculates output representation m as
+    follows:
+
+        m = \sum_j l_j \circ x_j
+
+    where
+        l is a column vector where l_{kj} = (1 - j/J) - (k/d) (1 - 2j/J)
+        x is a list of J word embeddings
+        d is the dimension of the embedding space
+        \circ is element-wise multiplication
+
+    For more information, see
+        Sainbayar Sukhbaatar, Arthur Szlam, Jason Weston, and Rob Fergus.
+        End-To-End Memory Networks. In NIPS, 2015.
+    """
     def __init__(self, hidden_size):
         super(PositionalEncoder, self).__init__()
         self.d = hidden_size
@@ -27,6 +45,32 @@ class PositionalEncoder(nn.Module):
 
 
 class QRNCell(nn.Module):
+    r"""
+    A single QRN unit. Accepts input in the form of a statement x_t, a
+    question q_t, and the previous hidden layer h_{t-1}. Calculates output
+    hidden layer h_t as follows:
+
+        z_t = \alpha(x_t, q_t) = \sigma(W^{(z)}(x_t \circ q_t) + b^{(z)})
+
+        \tilde{h}_t = \rho(x_t, q_t) = \tanh(W^{(h)}[x_t; q_t] + b^{(h)})
+
+        h_t = z_t \tilde{h}_t + (1 - z_t) h_{t-1}
+
+    where
+
+        \alpha is an update gate
+        \rho is a reduce function
+        \sigma is the sigmoid activation
+        \tanh is the hyperbolic tangent activation
+        W^{(z)} and W^{(h)} are weight matrices
+        b^{(z)} and b^{(h)} are bias vectors
+        \circ is element-wise multiplication
+        [;] is vector concatenation along the row
+
+    For more information, see
+        Minjoon Seo, Sewon Min, Ali Farhadi, and Hannaneh Hajishirzi.
+        Query-Reduction Networks for Question Answering. In ICLR, 2017.
+    """
     def __init__(self, input_size, hidden_size):
         super(QRNCell, self).__init__()
         self.input_size = input_size
@@ -52,6 +96,31 @@ class QRNCell(nn.Module):
 
 
 class QRN(nn.Module):
+    r"""
+    A QRN model consisting of multiple QRN units chained together in layers,
+    optionally bidirectional. Accepts as input a story (list of tensors
+    representing statements) and a question (single tensor).
+
+    Layers are stacked by passing the outputs of the previous layer as inputs
+    to the current layer. Only the question is passed through the QRN; the
+    story remains unchanged. If the ORN is not bidirectional, the question
+    input to the next layer is given by
+
+        q_t^{k+1} = h_t^{k}
+
+    If the QRN is bidirectional, the question input to the next layer is
+    instead given by
+
+        q_t^{k+1} = \overrightarrow{h}_t^{k} + \overleftarrow{h}_t^{k}
+
+    where
+        \overrightarrow{h} represents the hidden layer in the forward direction
+        \overleftarrow{h} represents the hidden layer in the backward direction
+
+    For more information, see
+        Minjoon Seo, Sewon Min, Ali Farhadi, and Hannaneh Hajishirzi.
+        Query-Reduction Networks for Question Answering. In ICLR, 2017.
+    """
     def __init__(self, input_size, hidden_size, n_layers, bidirectional=False):
         super(QRN, self).__init__()
 
@@ -127,6 +196,22 @@ class QRN(nn.Module):
 
 
 class Model(nn.Module):
+    r"""
+    A QRN model similar to the one discussed in
+        Minjoon Seo, Sewon Min, Ali Farhadi, and Hannaneh Hajishirzi.
+        Query-Reduction Networks for Question Answering. In ICLR, 2017.
+
+    Accepts as input a story (list of tensors representing statements) and a
+    question (single tensor). Consists of
+        * an embedding layer with dimension equal to the hidden layer size that
+            encodes each word as a vector
+        * a positional encoder that encodes each statement as a single vector
+            by combining its word vectors
+        * a QRN that outputs a hidden layer representing the network's
+            predicted answer to the question
+        * a final linear layer that decodes this prediction back into a
+            single word
+    """
     # TODO: test/make work on batch data
     def __init__(self, n_words, hidden_size, n_layers, bidirectional=False):
         super(Model, self).__init__()

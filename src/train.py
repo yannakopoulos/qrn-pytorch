@@ -5,7 +5,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.utils.data as utils_data
+# import torch.utils.data as utils_data
 from babi import load_corpus
 from model import Model
 
@@ -15,12 +15,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d", "--data", required=True, help="bAbI data directory")
     parser.add_argument(
-        "-t", "--tasks", type=int, nargs="+", help="bAbI tasks to load")
+        "-t", "--tasks", type=int, nargs="+",
+        help="specific bAbI tasks to load")
     parser.add_argument(
         "-s", "--hidden_size", type=int, default=32,
         help="size of hidden layer")
     parser.add_argument(
-        "-l", "--n_layers", type=int, default=1,
+        "-l", "--n_layers", type=int, default=2,
         help="number of QRN layers")
     parser.add_argument(
         "-b", "--bidirectional", action="store_true",
@@ -47,7 +48,11 @@ if __name__ == "__main__":
     if not os.path.isdir(args.data):
         parser.error("{} is not a directory".format(args.data))
 
-    # # determine if GPU is available
+    if args.verbose:
+        print("Arguments:")
+        for arg in vars(args):
+            print("{} = {}".format(arg, getattr(args, arg)))
+
     if torch.cuda.is_available() and args.verbose:
         print("GPU found:", torch.cuda.get_device_name(0))
 
@@ -55,8 +60,6 @@ if __name__ == "__main__":
         print("Reading bAbI corpus...")
 
     train_data, test_data, n_words = load_corpus(args.data, tasks=args.tasks)
-    # train_stories, train_questions, train_answers = train_data
-    # test_stories, test_questions, test_answers = train_data
 
     if args.verbose:
         print("Initializing model...")
@@ -157,7 +160,7 @@ if __name__ == "__main__":
 
     filename = "QRN-" + "-".join([
         "{}={}".format(arg, getattr(args, arg)) for arg in vars(args)
-        if arg != "data" and arg != "verbose"])
+        if arg != "data" and arg != "results" and arg != "verbose"])
     results_file = os.path.join(args.results, filename + ".tsv")
     model_file = os.path.join(args.results, filename + ".model")
 

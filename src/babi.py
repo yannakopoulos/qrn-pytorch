@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import os
 import re
-from model import LongTensor, FloatTensor
+from model import LongTensor
 
 
 def tokenize(line):
-    """
+    r"""
     Tokenizes a line of text into words and punctuation.
 
     Parameters
@@ -24,7 +24,7 @@ def tokenize(line):
 
 
 def load_data(path, tasks=None):
-    """
+    r"""
     Loads training/validation data from the bAbI dataset.
 
     Parameters
@@ -85,7 +85,7 @@ def load_data(path, tasks=None):
 
 
 def data_to_index(data, dictionary):
-    """
+    r"""
     Converts all tokens in data to embedding indices according to a dictionary.
 
     Parameters
@@ -122,7 +122,7 @@ def data_to_index(data, dictionary):
 
 
 def load_corpus(path, tasks=None):
-    """
+    r"""
     Loads bAbI corpus.
 
     Parameters
