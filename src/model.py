@@ -88,23 +88,40 @@ class QRN(nn.Module):
             # initialize h_0 to zero vector
             h_states_forward.append(
                 [FloatTensor(self.hidden_size).fill_(0)])
-            h_states_backward.insert(
-                0, [FloatTensor(self.hidden_size).fill_(0)])
+            if self.bidirectional:
+                h_states_backward.append(
+                    [FloatTensor(self.hidden_size).fill_(0)])
 
-        # TODO: implement bidirectionality
-        for statement in story:
-            # first layer uses question directly
+        for i in range(len(story)):
             q_states[0].append(question)
-            for layer, module in enumerate(self.forward_layers):
-                h_forward = module(
-                    statement, q_states[layer][-1],
-                    h_states_forward[layer][-1])
-                if layer < self.n_layers - 1:
-                    # same iteration of next layer uses q = h from this layer
-                    # unless this layer is the last one
-                    q_states[layer + 1].append(h_forward)
-                # next iteration of same layer uses output hidden layer
+
+        for layer in range(self.n_layers):
+            # forward pass
+            for i, statement in enumerate(story):
+                h_forward = self.forward_layers[layer](
+                    statement, q_states[layer][i],
+                    h_states_forward[layer][i])
                 h_states_forward[layer].append(h_forward)
+
+            # backward pass
+            if self.bidirectional:
+                for i, statement in enumerate(reversed(story)):
+                    h_backward = self.backward_layers[layer](
+                        statement, q_states[layer][-(i + 1)],
+                        h_states_backward[layer][i])
+                    h_states_backward[layer].append(h_backward)
+
+            # calculate question for next layer if necessary
+            if layer < self.n_layers - 1:
+                if self.bidirectional:
+                    for i in range(len(story)):
+                        q_states[layer + 1].append(
+                            h_states_forward[layer][i + 1] +
+                            h_states_backward[layer][-(i + 1)])
+                else:
+                    for i in range(len(story)):
+                        q_states[layer + 1].append(
+                            h_states_forward[layer][i + 1])
 
         return h_states_forward[-1][-1]
 
@@ -115,7 +132,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.embed = nn.Embedding(n_words + 1, hidden_size, padding_idx=0)
         self.encoder = PositionalEncoder(hidden_size)
-        self.QRN = QRN(hidden_size, hidden_size, n_layers)
+        self.QRN = QRN(hidden_size, hidden_size, n_layers, bidirectional)
         self.predict = nn.Linear(hidden_size, n_words + 1)
         self.reset_parameters()
 
