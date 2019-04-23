@@ -22,6 +22,7 @@ class PositionalEncoder(nn.Module):
         m = \sum_j l_j \circ x_j
 
     where
+
         l is a column vector where l_{kj} = (1 - j/J) - (k/d) (1 - 2j/J)
         x is a list of J word embeddings
         d is the dimension of the embedding space
@@ -111,9 +112,10 @@ class QRN(nn.Module):
     If the QRN is bidirectional, the question input to the next layer is
     instead given by
 
-        q_t^{k+1} = \overrightarrow{h}_t^{k} + \overleftarrow{h}_t^{k}
+        q_t^{k+1} = \overrightarrow{h}_t^k + \overleftarrow{h}_t^k
 
     where
+
         \overrightarrow{h} represents the hidden layer in the forward direction
         \overleftarrow{h} represents the hidden layer in the backward direction
 
